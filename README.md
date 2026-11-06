@@ -248,3 +248,199 @@ Charge = -3, Spin = 35 (PYSCF convention: 2*S) for UKS/B3LYP with sf-X2C Hamilto
 Molecular orbitals: Split-Localized MOs, see MOs_plots (ordered by Genetic Algorithm implemented in the BLOCK code)
 
 Active space information: CAS(113e,76o) 
+
+---
+
+## Orbital reordering: atom-contiguous active space
+
+The 76 active orbitals are `mo518`–`mo593` of the underlying calculation.
+They were re-examined visually from the pictures in [`MOs_plots`](<MOs_plots/>).
+The original order — the genetic-algorithm (GA) localization produced by
+BLOCK — interleaves the three 3p orbitals of a given sulfur atom (for
+example old orbitals 7, 12 and 14).  The orbitals were therefore reclassified
+and reordered so that **all orbitals that belong to the same atom are
+contiguous**.
+
+The integrals in the FCIDUMP were transformed with `PERM[new] = old`
+(0-based orbital labels; the FCIDUMP itself uses 1-based labels):
+
+```text
+h'[I,J]    = h[p_I, p_J]
+(I J|K L)' = (p_I p_J | p_K p_L),      p_X = PERM[X] + 1
+```
+
+`NORB`, `NELEC` (=113), `MS2` (=3), `ORBSYM` (all 1) and the nuclear energy
+(`ECORE = -21021.2140122`) are unchanged, and the output keeps the canonical
+FCIDUMP layout (header, two-electron block, one-electron block, `0 0 0 0`
+energy line).  The result was verified by re-reading both files: all
+4 282 201 two-electron and 2 926 one-electron integrals agree exactly.
+
+### Before reordering (original GA order)
+
+| `MOs_plots/` group | Old orbital indices | Count | Character |
+|:-------------------|:--------------------|------:|:----------|
+| `0. end_2` | 0, 1 | 2 | terminal S 3p |
+| `1. fe_5` | 2, 3, 4, 5, 6 | 5 | Fe 3d |
+| `2. s_9` | 7–15 | 9 | 3 × S 3p |
+| `3. fe_5` | 16, 17, 18, 19, 20 | 5 | Fe 3d |
+| `4. fe_5` | 21, 22, 23, 24, 25 | 5 | Fe 3d |
+| `5. fe_5` | 26, 27, 28, 29, 30 | 5 | Fe 3d |
+| `6. sANDc_13` | 31–43 | 13 | 3 × S 3p + C 2s2p |
+| `7. fe_5` | 44, 45, 46, 47, 48 | 5 | Fe 3d |
+| `8. fe_5` | 49, 50, 51, 52, 53 | 5 | Fe 3d |
+| `9. fe_5` | 54, 55, 56, 57, 58 | 5 | Fe 3d |
+| `10. s_9` | 59–64, 66–68 | 9 | 3 × S 3p |
+| `11. mo` | 65, 69–72 | 5 | Mo 4d |
+| `12. end_3` | 73, 74, 75 | 3 | S 3p |
+
+Within the sulfur blocks the three 3p orbitals of one atom are spread over
+the block instead of being adjacent, and the Mo 4d orbital 65 is embedded in
+the `10. s_9` block.
+
+### After reordering (atom-contiguous)
+
+Every row is one atom (for `S1`, the terminal S 3p pair); the orbitals of an
+atom are now consecutive.
+
+| Group | Character | Old orbital indices | New orbital indices |
+|:-----:|:----------|:--------------------|:--------------------|
+| S1 | terminal S 3p | 0, 1 | 0–1 |
+| Fe1 | Fe 3d | 2, 3, 4, 5, 6 | 2–6 |
+| S2 | S 3p | 7, 12, 14 | 7–9 |
+| S3 | S 3p | 8, 13, 15 | 10–12 |
+| S4 | S 3p | 9, 10, 11 | 13–15 |
+| Fe2 | Fe 3d | 16, 17, 18, 19, 20 | 16–20 |
+| Fe3 | Fe 3d | 21, 22, 23, 24, 25 | 21–25 |
+| Fe4 | Fe 3d | 26, 27, 28, 29, 30 | 26–30 |
+| S5 | S 3p | 31, 32, 34 | 31–33 |
+| S6 | S 3p | 33, 39, 40 | 34–36 |
+| S7 | S 3p | 41, 42, 43 | 37–39 |
+| C1 | C 2s2p | 35, 36, 37, 38 | 40–43 |
+| Fe5 | Fe 3d | 44, 45, 46, 47, 48 | 44–48 |
+| Fe6 | Fe 3d | 49, 50, 51, 52, 53 | 49–53 |
+| Fe7 | Fe 3d | 54, 55, 56, 57, 58 | 54–58 |
+| S8 | S 3p | 59, 60, 63 | 59–61 |
+| S9 | S 3p | 61, 62, 67 | 62–64 |
+| S10 | S 3p | 64, 66, 68 | 65–67 |
+| Mo1 | Mo 4d | 65, 69, 70, 71, 72 | 68–72 |
+| S11 | S 3p | 73, 74, 75 | 73–75 |
+
+> The group labels `S1`–`S11`, `Fe1`–`Fe7`, `C1` and `Mo1` follow the new
+> (atom-contiguous) orbital order.  They label orbital groups and do not
+> necessarily coincide with the atom indices of the geometry block above;
+> `Fe1` is the group identified as “Fe1 3d” in the orbital plots.
+
+### Full mapping (new → old)
+
+The `Full MO` column gives the parent-calculation orbital label (`femo-mo<n>`)
+taken from the file names in `MOs_plots/`; the leading integer of those file
+names is the old 0-based active-space index.
+
+| New | Old | Full MO | Group | Character |
+|----:|----:|--------:|:-----:|:----------|
+| 0 | 0 | mo521 | S1 | terminal S 3p |
+| 1 | 1 | mo522 | S1 | terminal S 3p |
+| 2 | 2 | mo563 | Fe1 | Fe 3d |
+| 3 | 3 | mo591 | Fe1 | Fe 3d |
+| 4 | 4 | mo589 | Fe1 | Fe 3d |
+| 5 | 5 | mo583 | Fe1 | Fe 3d |
+| 6 | 6 | mo554 | Fe1 | Fe 3d |
+| 7 | 7 | mo536 | S2 | S 3p |
+| 8 | 12 | mo535 | S2 | S 3p |
+| 9 | 14 | mo538 | S2 | S 3p |
+| 10 | 8 | mo531 | S3 | S 3p |
+| 11 | 13 | mo526 | S3 | S 3p |
+| 12 | 15 | mo533 | S3 | S 3p |
+| 13 | 9 | mo539 | S4 | S 3p |
+| 14 | 10 | mo529 | S4 | S 3p |
+| 15 | 11 | mo534 | S4 | S 3p |
+| 16 | 16 | mo555 | Fe2 | Fe 3d |
+| 17 | 17 | mo575 | Fe2 | Fe 3d |
+| 18 | 18 | mo587 | Fe2 | Fe 3d |
+| 19 | 19 | mo585 | Fe2 | Fe 3d |
+| 20 | 20 | mo571 | Fe2 | Fe 3d |
+| 21 | 21 | mo577 | Fe3 | Fe 3d |
+| 22 | 22 | mo569 | Fe3 | Fe 3d |
+| 23 | 23 | mo567 | Fe3 | Fe 3d |
+| 24 | 24 | mo582 | Fe3 | Fe 3d |
+| 25 | 25 | mo557 | Fe3 | Fe 3d |
+| 26 | 26 | mo562 | Fe4 | Fe 3d |
+| 27 | 27 | mo578 | Fe4 | Fe 3d |
+| 28 | 28 | mo572 | Fe4 | Fe 3d |
+| 29 | 29 | mo586 | Fe4 | Fe 3d |
+| 30 | 30 | mo559 | Fe4 | Fe 3d |
+| 31 | 31 | mo523 | S5 | S 3p |
+| 32 | 32 | mo524 | S5 | S 3p |
+| 33 | 34 | mo527 | S5 | S 3p |
+| 34 | 33 | mo530 | S6 | S 3p |
+| 35 | 39 | mo525 | S6 | S 3p |
+| 36 | 40 | mo528 | S6 | S 3p |
+| 37 | 41 | mo540 | S7 | S 3p |
+| 38 | 42 | mo547 | S7 | S 3p |
+| 39 | 43 | mo537 | S7 | S 3p |
+| 40 | 35 | mo551 | C1 | C 2s2p |
+| 41 | 36 | mo553 | C1 | C 2s2p |
+| 42 | 37 | mo552 | C1 | C 2s2p |
+| 43 | 38 | mo532 | C1 | C 2s2p |
+| 44 | 44 | mo580 | Fe5 | Fe 3d |
+| 45 | 45 | mo560 | Fe5 | Fe 3d |
+| 46 | 46 | mo564 | Fe5 | Fe 3d |
+| 47 | 47 | mo566 | Fe5 | Fe 3d |
+| 48 | 48 | mo568 | Fe5 | Fe 3d |
+| 49 | 49 | mo556 | Fe6 | Fe 3d |
+| 50 | 50 | mo579 | Fe6 | Fe 3d |
+| 51 | 51 | mo588 | Fe6 | Fe 3d |
+| 52 | 52 | mo576 | Fe6 | Fe 3d |
+| 53 | 53 | mo570 | Fe6 | Fe 3d |
+| 54 | 54 | mo561 | Fe7 | Fe 3d |
+| 55 | 55 | mo558 | Fe7 | Fe 3d |
+| 56 | 56 | mo590 | Fe7 | Fe 3d |
+| 57 | 57 | mo565 | Fe7 | Fe 3d |
+| 58 | 58 | mo573 | Fe7 | Fe 3d |
+| 59 | 59 | mo543 | S8 | S 3p |
+| 60 | 60 | mo544 | S8 | S 3p |
+| 61 | 63 | mo550 | S8 | S 3p |
+| 62 | 61 | mo542 | S9 | S 3p |
+| 63 | 62 | mo541 | S9 | S 3p |
+| 64 | 67 | mo546 | S9 | S 3p |
+| 65 | 64 | mo549 | S10 | S 3p |
+| 66 | 66 | mo545 | S10 | S 3p |
+| 67 | 68 | mo548 | S10 | S 3p |
+| 68 | 65 | mo574 | Mo1 | Mo 4d |
+| 69 | 69 | mo581 | Mo1 | Mo 4d |
+| 70 | 70 | mo584 | Mo1 | Mo 4d |
+| 71 | 71 | mo592 | Mo1 | Mo 4d |
+| 72 | 72 | mo593 | Mo1 | Mo 4d |
+| 73 | 73 | mo518 | S11 | S 3p |
+| 74 | 74 | mo519 | S11 | S 3p |
+| 75 | 75 | mo520 | S11 | S 3p |
+
+### `PERM` (new → old, 0-based)
+
+```python
+PERM = [
+    0, 1, 2, 3, 4, 5, 6, 7, 12, 14, 8, 13, 15, 9, 10,
+    11, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29,
+    30, 31, 32, 34, 33, 39, 40, 41, 42, 43, 35, 36, 37, 38, 44,
+    45, 46, 47, 48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59,
+    60, 63, 61, 62, 67, 64, 66, 68, 65, 69, 70, 71, 72, 73, 74,
+    75
+]
+```
+
+### Files and script
+
+[`reorder_orbitals.py`](<reorder_orbitals.py>) performs the transformation:
+
+```bash
+python3 reorder_orbitals.py --verify      # FCIDUMP.zip -> FCIDUMP_reordered + .zip
+python3 reorder_orbitals.py --print-map   # print the new -> old table
+```
+
+| File | Description |
+|:-----|:------------|
+| [`FCIDUMP_reordered`](<FCIDUMP_reordered>) | reordered FCIDUMP, 76 orbitals (128 MB) |
+| [`FCIDUMP_reordered.zip`](<FCIDUMP_reordered.zip>) | the same file, zipped (44 MB); the archive contains one file named `FCIDUMP_reordered` |
+
+The reordered file can be regenerated from the original `FCIDUMP.zip` at any
+time with the command above.
